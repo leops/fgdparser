@@ -58,14 +58,14 @@ class Parser {
 
     body() {
         if(this.token.type !== 'name') {
-            throw new TypeError(`Unexpected token type: ${this.token.type}`);
+            throw new TypeError(`Unexpected token type: ${this.token.type} ${this.token.value}`);
         }
 
         if(this.token.value === 'input' || this.token.value === 'output') {
             return this.connection();
         }
 
-        if(this.token.value === 'spawnflags') {
+        if(this.token.value.toLowerCase() === 'spawnflags') {
             return this.spawnflags();
         }
 
@@ -79,6 +79,81 @@ class Parser {
             type: 'Include',
             name: this.token.value
         };
+
+        this.next();
+        return node;
+    }
+
+    mapsize() {
+        this.next('paren', '(');
+        this.next('number');
+
+        const node = {
+            type: 'Mapsize',
+            x: this.token.value,
+        };
+
+        this.next('symbol', ',');
+        this.next('number');
+        node.y = this.token.value;
+
+        this.next('paren', ')');
+        this.next();
+        return node;
+    }
+
+    materialExclusion() {
+        this.next('square', '[');
+
+        const node = {
+            type: 'MaterialExclusion',
+            materials: [],
+        };
+
+        while(this.next('string', null, false)) {
+            node.materials.push(this.token.value);
+        }
+
+        if(this.token.type !== 'square' || this.token.value !== ']') {
+            throw new TypeError(`Unexpected token ${this.token.type} ${this.token.value}`);
+        }
+
+        this.next();
+        return node;
+    }
+
+    autoVisGroup() {
+        this.next('symbol', '=');
+        this.next('string');
+
+        const node = {
+            type: 'AutoVisGroup',
+            description: this.token.value,
+            categories: [],
+        };
+
+        this.next('square', '[');
+        while(this.next('string', null, false)) {
+            const category = {
+                type: 'Category',
+                name: this.token.value,
+                groups: [],
+            };
+
+            this.next('square', '[');
+            while(this.next('string', null, false)) {
+                category.groups.push({
+                    type: 'VisGroup',
+                    name: this.token.value,
+                });
+            }
+
+            if(this.token.type !== 'square' || this.token.value !== ']') {
+                throw new TypeError(`Unexpected ${this.token.type} token ${this.token.value}`);
+            }
+
+            node.categories.push(category);
+        }
 
         this.next();
         return node;
@@ -98,9 +173,11 @@ class Parser {
         node.args = this.token.value;
         this.next('paren', ')');
 
-        this.next('symbol', ':');
-        this.next('string');
-        node.description = this.literal();
+        if(this.next('symbol', ':', false)) {
+            this.next('string');
+            node.description = this.literal();
+        }
+
         return node;
     }
 
@@ -158,10 +235,16 @@ class Parser {
 
         this.next('paren', '(');
         this.next('name');
-        node.proptype = this.token.value;
+        node.proptype = this.token.value.toLowerCase();
         this.next('paren', ')');
 
-        if(this.next('symbol', ':', false) && this.next('string', null, false)) {
+        if(this.next('name', null, false)) {
+            if(['report', 'readonly'].indexOf(this.token.value) !== -1) {
+                this.next();
+            }
+        }
+
+        if(this.token.type === 'symbol' && this.token.value === ':' && this.next('string', null, false)) {
             node.title = this.literal();
         }
 
@@ -199,6 +282,7 @@ class Parser {
 
             this.next();
         }
+
         return node;
     }
 
@@ -213,29 +297,30 @@ class Parser {
             properties: []
         };
 
-        this.next('paren', '(');
-        this.next();
-        while (this.token.type !== 'paren' || this.token.value !== ')') {
-            switch(this.token.type) {
-                case 'name':
-                    node.properties.push(this.name());
-                    break;
+        if(this.next('paren', '(', false)) {
+            this.next();
+            while (this.token.type !== 'paren' || this.token.value !== ')') {
+                switch(this.token.type) {
+                    case 'name':
+                        node.properties.push(this.name());
+                        break;
 
-                case 'string':
-                case 'number':
-                    node.properties.push(this.literal());
-                    break;
+                    case 'string':
+                    case 'number':
+                        node.properties.push(this.literal());
+                        break;
 
-                default:
-                    throw new TypeError(`Unexpected token type: ${this.token.type}(${this.token.value})`);
+                    default:
+                        throw new TypeError(`Unexpected token type: ${this.token.type}(${this.token.value})`);
+                }
+
+                if(this.token.type === 'symbol' && this.token.value === ',') {
+                    this.next();
+                }
             }
-
-            if(this.token.type === 'symbol' && this.token.value === ',') {
-                this.next();
-            }
+            this.next();
         }
 
-        this.next();
         return node;
     }
 
@@ -257,10 +342,12 @@ class Parser {
 
         this.next();
         while(this.token.type === 'symbol' && this.token.value === '+') {
-            this.next();
-            node.value += this.token.value;
-            this.next();
+            if(this.next('string', null, false)) {
+                node.value += this.token.value;
+                this.next();
+            }
         }
+
         return node;
     }
 
@@ -272,6 +359,18 @@ class Parser {
         this.next('name');
         if(this.token.value === 'include') {
             return this.include();
+        }
+
+        if(this.token.value === 'mapsize') {
+            return this.mapsize();
+        }
+
+        if(this.token.value === 'MaterialExclusion') {
+            return this.materialExclusion();
+        }
+
+        if(this.token.value === 'AutoVisGroup') {
+            return this.autoVisGroup();
         }
 
         return this.decl();

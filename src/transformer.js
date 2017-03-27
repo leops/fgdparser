@@ -44,7 +44,7 @@ function prop(result, decl) {
             const {name, description, args, direction} = decl;
             const conn = {
                 name,
-                description: description.value,
+                description: description && description.value,
                 type: args
             };
 
