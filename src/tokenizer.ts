@@ -4,51 +4,69 @@ const NAME = /[a-z_]/i;
 const NUMBER = /[\-\d\.]/;
 const SYMBOL = /[@,:=+]/;
 
-module.exports = function(input) {
-    const tokens = [];
+interface StringToken {
+    type:
+        | 'symbol'
+        | 'paren'
+        | 'square'
+        | 'bracket'
+        | 'string'
+        | 'name'
+        | 'number';
+    value: string;
+}
+interface NumberToken {
+    type: 'number';
+    value: number;
+}
+
+export type Token = StringToken | NumberToken;
+
+export default function(input: string): Token[] {
+    const tokens: Token[] = [];
     let current = 0;
 
     while (current < input.length) {
         let char = input[current];
 
-        switch(true) {
+        switch (true) {
             case SYMBOL.test(char):
                 tokens.push({
                     type: 'symbol',
-                    value: char
+                    value: char,
                 });
 
                 current++;
                 continue;
 
-            case (char === '(' || char === ')'):
+            case char === '(' || char === ')':
                 tokens.push({
                     type: 'paren',
-                    value: char
+                    value: char,
                 });
 
                 current++;
                 continue;
 
-            case (char === '[' || char === ']'):
+            case char === '[' || char === ']':
                 tokens.push({
                     type: 'square',
-                    value: char
+                    value: char,
                 });
 
                 current++;
                 continue;
 
-            case (char === '{' || char === '}'):
+            case char === '{' || char === '}':
                 tokens.push({
                     type: 'bracket',
-                    value: char
+                    value: char,
                 });
 
                 current++;
                 continue;
 
-            case (char === '"'): {
+            case char === '"': {
                 let value = '';
                 char = input[++current];
 
@@ -59,7 +77,7 @@ module.exports = function(input) {
 
                 tokens.push({
                     type: 'string',
-                    value
+                    value,
                 });
 
                 current++;
@@ -76,7 +94,7 @@ module.exports = function(input) {
 
                 tokens.push({
                     type: 'name',
-                    value
+                    value,
                 });
 
                 continue;
@@ -92,7 +110,7 @@ module.exports = function(input) {
 
                 tokens.push({
                     type: 'number',
-                    value: Number(value)
+                    value: Number(value),
                 });
 
                 continue;
@@ -102,10 +120,12 @@ module.exports = function(input) {
                 current++;
                 continue;
 
-            case (char === '/'): {
+            case char === '/': {
                 char = input[++current];
-                if(char !== '/') {
-                    throw new TypeError(`Unexpected character: ${char} at position ${current}`);
+                if (char !== '/') {
+                    throw new TypeError(
+                        `Unexpected character: ${char} at position ${current}`,
+                    );
                 }
 
                 char = input[++current];
@@ -120,7 +140,9 @@ module.exports = function(input) {
             }
 
             default:
-                throw new TypeError(`Unknown character: ${char} at position ${current}`);
+                throw new TypeError(
+                    `Unknown character: ${char} at position ${current}`,
+                );
         }
     }
 

@@ -1,21 +1,31 @@
 {
-  "name": "fgdparser",
-  "version": "0.2.0",
-  "description": "A parser for the Forge Game Data format",
-  "main": "src/",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/leops/fgdparser.git"
-  },
-  "keywords": [
-    "fgd",
-    "parser",
-    "hammer"
-  ],
-  "author": "leops",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/leops/fgdparser/issues"
-  },
-  "homepage": "https://github.com/leops/fgdparser"
+    "name": "@leops/fgdparser",
+    "version": "1.0.0",
+    "description": "A parser for the Forge Game Data format",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "prepublishOnly": "tsc"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/leops/fgdparser.git"
+    },
+    "keywords": [
+        "fgd",
+        "parser",
+        "hammer"
+    ],
+    "author": "leops",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/leops/fgdparser/issues"
+    },
+    "homepage": "https://github.com/leops/fgdparser",
+    "devDependencies": {
+        "typescript": "^3.6.3"
+    },
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com/"
+    }
 }
