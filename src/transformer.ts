@@ -24,17 +24,28 @@ interface Connection {
     description?: string;
 }
 
+interface Parameters {
+    [key: string]: string[];
+}
+
 interface Declaration {
     type: string;
     description?: string;
+    parameters?: Parameters;
     properties?: Property[];
     inputs?: Connection[];
     outputs?: Connection[];
     flags?: SpawnFlag[];
 }
 
-function param(result: Declaration, { type }: Parameter) {
-    //console.log('param', arguments[1]);
+function param(result: Declaration, param: Parameter) {
+    let parameters = result.parameters;
+    if(!parameters) {
+        parameters = {};
+        result.parameters = parameters;
+    }
+
+    parameters[param.name] = param.properties.map(prop => prop.value);
     return result;
 }
 
